@@ -24,26 +24,29 @@ function ensureDataDir() {
 function loadFromFiles() {
   ensureDataDir();
 
-  if (fs.existsSync(USERS_FILE)) {
-    const data = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
-    for (const [key, value] of Object.entries(data)) {
-      users.set(key, value as StoredUserData);
+  const loadJsonFile = <T>(filePath: string, dest: Map<string, T>) => {
+    if (!fs.existsSync(filePath)) {
+      return;
     }
-  }
 
-  if (fs.existsSync(SESSIONS_FILE)) {
-    const data = JSON.parse(fs.readFileSync(SESSIONS_FILE, "utf-8"));
-    for (const [key, value] of Object.entries(data)) {
-      sessions.set(key, value as { userId: string; expiresAt: number });
+    try {
+      const raw = fs.readFileSync(filePath, "utf-8");
+      if (!raw.trim()) {
+        return;
+      }
+      const data = JSON.parse(raw) as Record<string, T>;
+      for (const [key, value] of Object.entries(data)) {
+        dest.set(key, value);
+      }
+    } catch (error) {
+      console.error(`Failed to load ${filePath}:`, error);
+      // If the file is corrupted, preserve it for debugging but continue with an empty store.
     }
-  }
+  };
 
-  if (fs.existsSync(MESSAGES_FILE)) {
-    const data = JSON.parse(fs.readFileSync(MESSAGES_FILE, "utf-8"));
-    for (const [key, value] of Object.entries(data)) {
-      messages.set(key, value as StoredMessageData);
-    }
-  }
+  loadJsonFile(USERS_FILE, users);
+  loadJsonFile(SESSIONS_FILE, sessions);
+  loadJsonFile(MESSAGES_FILE, messages);
 }
 
 // Save data to files

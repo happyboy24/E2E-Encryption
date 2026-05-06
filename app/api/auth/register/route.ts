@@ -30,7 +30,10 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Register error:", error);
+    console.error("Register error:", {
+      error,
+      requestBody: await request.clone().text().catch(() => "<failed to read body>"),
+    });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
