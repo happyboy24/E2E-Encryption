@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { Mail, Lock, LogIn } from "lucide-react";
 import { useAuth } from "./AuthContext";
-import { generateKeyPair } from "@/lib/crypto";
 
 interface LoginFormProps {
   onSwitchToRegister: () => void;
@@ -31,66 +30,53 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-white drop-shadow-lg">Login</h2>
+    <form onSubmit={handleSubmit} className="auth-form">
+      <h2>Welcome Back</h2>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-500/30 border border-red-300/50 text-white rounded-lg backdrop-blur-sm">
-          {error}
-        </div>
-      )}
+      {error && <div className="auth-message error">{error}</div>}
 
-      <div className="mb-4">
-        <label className="block text-white/90 text-sm font-bold mb-2 flex items-center gap-2 drop-shadow-md">
-          <Mail className="w-4 h-4" />
-          Email
-        </label>
+      <label>
+        <span className="auth-label">
+          <Mail className="auth-icon" /> Email
+        </span>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent disabled:opacity-50 transition-all"
+          className="auth-input"
           placeholder="Enter your email"
           disabled={isLoading}
         />
-      </div>
+      </label>
 
-      <div className="mb-6">
-        <label className="block text-white/90 text-sm font-bold mb-2 flex items-center gap-2 drop-shadow-md">
-          <Lock className="w-4 h-4" />
-          Password
-        </label>
+      <label>
+        <span className="auth-label">
+          <Lock className="auth-icon" /> Password
+        </span>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent disabled:opacity-50 transition-all"
+          className="auth-input"
           placeholder="Enter your password"
           disabled={isLoading}
         />
-      </div>
+      </label>
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full bg-blue-500/80 hover:bg-blue-600/80 backdrop-blur-sm text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all border border-blue-400/50 shadow-lg"
-      >
-        <LogIn className="w-4 h-4" />
+      <button type="submit" disabled={isLoading} className="auth-btn">
+        <LogIn className="auth-icon" />
         {isLoading ? "Logging in..." : "Login"}
       </button>
 
-      <p className="mt-4 text-center text-white/80 text-sm drop-shadow-md">
-        Don't have an account?{" "}
-        <button
-          type="button"
-          onClick={onSwitchToRegister}
-          className="text-white font-bold hover:text-blue-200 transition-colors"
-        >
-          Register
-        </button>
-      </p>
+      <button
+        type="button"
+        className="auth-btn secondary"
+        onClick={onSwitchToRegister}
+      >
+        Create Account
+      </button>
     </form>
   );
 }

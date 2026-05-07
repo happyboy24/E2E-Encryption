@@ -6,10 +6,12 @@ export interface User {
   email: string;
   publicKey: JsonWebKey;
   createdAt: number;
+  isAdmin?: boolean;
 }
 
 export interface StoredUser extends User {
   passwordHash: string;
+  isAdmin: boolean;
 }
 
 export interface Message {

@@ -2,13 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { registerUserInDb } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
+  let body: any = null;
+
   try {
-    const body = await request.json();
+    body = await request.json();
     const { username, email, password, publicKey } = body;
 
-    if (!username || !email || !password || !publicKey) {
+    if (
+      !username ||
+      !email ||
+      !password ||
+      !publicKey ||
+      typeof publicKey !== "object" ||
+      Array.isArray(publicKey)
+    ) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing or invalid required fields" },
         { status: 400 }
       );
     }
@@ -31,7 +40,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     const isSyntaxError = error instanceof Error && /JSON/.test(error.message);
-    console.error("Register error:", error);
+    console.error("Register error:", error, { body });
 
     if (isSyntaxError) {
       return NextResponse.json(

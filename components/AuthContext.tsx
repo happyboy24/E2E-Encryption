@@ -15,6 +15,12 @@ interface AuthContextType {
     password: string,
     publicKey: JsonWebKey
   ) => Promise<void>;
+  registerAdmin: (
+    username: string,
+    email: string,
+    password: string,
+    publicKey: JsonWebKey
+  ) => Promise<void>;
   logout: () => void;
   setUser: (user: types.User | null) => void;
   setToken: (token: string | null) => void;
@@ -57,29 +63,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!response.ok) {
-      let errorMessage = "Login failed";
-      try {
-        const error = await response.json();
-        errorMessage = error.error || errorMessage;
-      } catch {
-        errorMessage = `Server error: ${response.status}`;
+      if (!response.ok) {
+        let errorMessage = `Login failed (${response.status})`;
+        const text = await response.text().catch(() => "");
+        try {
+          const parsed = JSON.parse(text);
+          errorMessage = parsed.error || errorMessage;
+        } catch {
+          if (text) {
+            errorMessage = text;
+          }
+        }
+        throw new Error(errorMessage);
       }
-      throw new Error(errorMessage);
+
+      const data = await response.json();
+      setToken(data.token);
+      setUser(data.user);
+
+      localStorage.setItem("auth_token", data.token);
+      localStorage.setItem("auth_user", JSON.stringify(data.user));
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Login failed. Please check your connection and try again."
+      );
     }
-
-    const data = await response.json();
-    setToken(data.token);
-    setUser(data.user);
-
-    localStorage.setItem("auth_token", data.token);
-    localStorage.setItem("auth_user", JSON.stringify(data.user));
   };
 
   const register = async (
@@ -88,34 +105,92 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     publicKey: JsonWebKey
   ) => {
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username,
-        email,
-        password,
-        publicKey,
-      }),
-    });
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          publicKey,
+        }),
+      });
 
-    if (!response.ok) {
-      let errorMessage = "Registration failed";
-      try {
-        const error = await response.json();
-        errorMessage = error.error || errorMessage;
-      } catch {
-        errorMessage = `Server error: ${response.status}`;
+      if (!response.ok) {
+        let errorMessage = `Registration failed (${response.status})`;
+        const text = await response.text().catch(() => "");
+        try {
+          const parsed = JSON.parse(text);
+          errorMessage = parsed.error || errorMessage;
+        } catch {
+          if (text) {
+            errorMessage = text;
+          }
+        }
+        throw new Error(errorMessage);
       }
-      throw new Error(errorMessage);
+
+      const data = await response.json();
+      setToken(data.token);
+      setUser(data.user);
+
+      localStorage.setItem("auth_token", data.token);
+      localStorage.setItem("auth_user", JSON.stringify(data.user));
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Registration failed. Please check your connection and try again."
+      );
     }
+  };
 
-    const data = await response.json();
-    setToken(data.token);
-    setUser(data.user);
+  const registerAdmin = async (
+    username: string,
+    email: string,
+    password: string,
+    publicKey: JsonWebKey
+  ) => {
+    try {
+      const response = await fetch("/api/admin/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          publicKey,
+        }),
+      });
 
-    localStorage.setItem("auth_token", data.token);
-    localStorage.setItem("auth_user", JSON.stringify(data.user));
+      if (!response.ok) {
+        let errorMessage = `Admin registration failed (${response.status})`;
+        const text = await response.text().catch(() => "");
+        try {
+          const parsed = JSON.parse(text);
+          errorMessage = parsed.error || errorMessage;
+        } catch {
+          if (text) {
+            errorMessage = text;
+          }
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      setToken(data.token);
+      setUser(data.user);
+
+      localStorage.setItem("auth_token", data.token);
+      localStorage.setItem("auth_user", JSON.stringify(data.user));
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Admin registration failed. Please check your connection and try again."
+      );
+    }
   };
 
   const logout = useCallback(() => {
@@ -133,6 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         register,
+        registerAdmin,
         logout,
         setUser,
         setToken,

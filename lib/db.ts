@@ -12,6 +12,7 @@ const DB_DIR = path.join(process.cwd(), ".data");
 const USERS_FILE = path.join(DB_DIR, "users.json");
 const SESSIONS_FILE = path.join(DB_DIR, "sessions.json");
 const MESSAGES_FILE = path.join(DB_DIR, "messages.json");
+const CORRUPTED_FILE_SUFFIX = ".corrupted";
 
 // Ensure data directory exists
 function ensureDataDir() {
@@ -34,13 +35,31 @@ function loadFromFiles() {
       if (!raw.trim()) {
         return;
       }
-      const data = JSON.parse(raw) as Record<string, T>;
+
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== "object" || Array.isArray(data)) {
+        throw new Error("Invalid data format");
+      }
+
       for (const [key, value] of Object.entries(data)) {
-        dest.set(key, value);
+        if (value && typeof value === "object") {
+          dest.set(key, value as T);
+        } else {
+          console.warn(`Skipping invalid entry in ${filePath}: ${key}`);
+        }
       }
     } catch (error) {
       console.error(`Failed to load ${filePath}:`, error);
-      // If the file is corrupted, preserve it for debugging but continue with an empty store.
+
+      const corruptedPath = `${filePath}${CORRUPTED_FILE_SUFFIX}.${Date.now()}`;
+      try {
+        fs.renameSync(filePath, corruptedPath);
+        console.error(`Renamed corrupted ${filePath} to ${corruptedPath}`);
+      } catch (renameError) {
+        console.error(`Unable to rename corrupted file ${filePath}:`, renameError);
+      }
+
+      // Continue with an empty store rather than failing startup.
     }
   };
 
@@ -94,7 +113,8 @@ export function registerUserInDb(
   username: string,
   email: string,
   password: string,
-  publicKey: JsonWebKey
+  publicKey: JsonWebKey,
+  isAdmin: boolean = false
 ): { token: string; user: types.User } | null {
   // Check if user already exists
   for (const user of users.values()) {
@@ -113,6 +133,7 @@ export function registerUserInDb(
     publicKey,
     passwordHash,
     createdAt: Date.now(),
+    isAdmin,
   };
 
   users.set(userId, user);
@@ -299,4 +320,57 @@ export function getConversationsForUser(userId: string): types.Conversation[] {
   }
 
   return Array.from(conversationMap.values());
+}
+
+// Admin functions
+export function isUserAdmin(userId: string): boolean {
+  const user = users.get(userId);
+  return user?.isAdmin ?? false;
+}
+
+export function deleteUser(userId: string): boolean {
+  // Delete user
+  const userDeleted = users.delete(userId);
+  if (userDeleted) {
+    saveUsers();
+  }
+
+  // Delete user's sessions
+  for (const [token, session] of sessions.entries()) {
+    if (session.userId === userId) {
+      sessions.delete(token);
+    }
+  }
+  if (userDeleted) {
+    saveSessions();
+  }
+
+  // Delete user's messages (both sent and received)
+  let messagesDeleted = false;
+  for (const [msgId, msg] of messages.entries()) {
+    if (msg.senderId === userId || msg.recipientId === userId) {
+      messages.delete(msgId);
+      messagesDeleted = true;
+    }
+  }
+  if (messagesDeleted) {
+    saveMessages();
+  }
+
+  return userDeleted;
+}
+
+export function deleteAllUsers(): number {
+  const count = users.size;
+  users.clear();
+  sessions.clear();
+  messages.clear();
+  saveUsers();
+  saveSessions();
+  saveMessages();
+  return count;
+}
+
+export function getUsersCount(): number {
+  return users.size;
 }
