@@ -76,7 +76,16 @@ export async function POST(request: NextRequest) {
       publicKey,
     });
   } catch (error) {
+    const isSyntaxError = error instanceof Error && /JSON/.test(error.message);
     console.error("Keys POST error:", error);
+
+    if (isSyntaxError) {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

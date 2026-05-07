@@ -27,7 +27,16 @@ export async function POST(request: NextRequest) {
       user: result.user,
     });
   } catch (error) {
+    const isSyntaxError = error instanceof Error && /JSON/.test(error.message);
     console.error("Login error:", error);
+
+    if (isSyntaxError) {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

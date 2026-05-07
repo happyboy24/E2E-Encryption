@@ -138,5 +138,15 @@
     "encryptedContentIv": "QgDgKz2bMhcph/ay",
     "timestamp": 1777949414748,
     "read": false
+  },
+  "a71e639d-b62e-48f4-b74a-545b65145c5c": {
+    "id": "a71e639d-b62e-48f4-b74a-545b65145c5c",
+    "senderId": "f70da136-5050-4fa1-867b-edb2fc479df1",
+    "recipientId": "0f6a4341-1924-467c-9bd2-936bbe5374bb",
+    "encryptedSymmetricKey": "abc",
+    "encryptedContent": "def",
+    "encryptedContentIv": "ghi",
+    "timestamp": 1778072132229,
+    "read": false
   }
 }

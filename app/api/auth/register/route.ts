@@ -30,10 +30,16 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Register error:", {
-      error,
-      requestBody: await request.clone().text().catch(() => "<failed to read body>"),
-    });
+    const isSyntaxError = error instanceof Error && /JSON/.test(error.message);
+    console.error("Register error:", error);
+
+    if (isSyntaxError) {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
